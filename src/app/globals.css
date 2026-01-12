@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+:root {
+  /* SnowMan base colors */
+  --background: #faf9f7; /* Soft Off-White */
+  --foreground: #3a3a3a; /* Charcoal */
+}
+
+@theme inline {
+  /* Map global tokens so Tailwind utility classes can use them */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Brand / design palette */
+  --color-sage: #8fa89e; /* Sage Green */
+  --color-soft-offwhite: #faf9f7; /* Soft Off-White */
+  --color-white: #ffffff; /* White */
+  --color-charcoal: #3a3a3a; /* Charcoal */
+  --color-gray: #6b6b6b; /* Gray */
+  --color-gray-light: #9a9a9a; /* Light Gray */
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
