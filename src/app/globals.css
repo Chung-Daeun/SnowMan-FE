@@ -12,6 +12,7 @@
   --color-foreground: var(--foreground);
 
   /* Brand / design palette */
+  --color-primary: #8fa89e; /* Primary Color (Sage Green) */
   --color-sage: #8fa89e; /* Sage Green */
   --color-soft-offwhite: #faf9f7; /* Soft Off-White */
   --color-white: #ffffff; /* White */
@@ -31,7 +32,7 @@
 }
 
 body {
-  background: var(--background);
+  background: #e8e8e8; /* 모바일 범위 밖 밝은 회색 배경색 */
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
