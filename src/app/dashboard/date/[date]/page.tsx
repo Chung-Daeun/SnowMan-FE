@@ -74,7 +74,10 @@ export default function DateDiaryPage() {
             <p className="text-gray-light text-sm">
               일기를 작성해보세요
             </p>
-            <button className="mt-4 rounded-xl bg-primary text-white px-6 py-3 font-semibold text-sm">
+            <button
+              onClick={() => router.push("/dashboard/write")}
+              className="mt-4 rounded-xl bg-primary text-white px-6 py-3 font-semibold text-sm hover:bg-[#7a9588] transition-colors"
+            >
               일기 작성하기
             </button>
           </div>

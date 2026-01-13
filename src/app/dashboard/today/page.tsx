@@ -60,7 +60,10 @@ export default function TodayPage() {
 
       {/* 일기 작성 버튼 */}
       <div className="fixed bottom-24 right-6">
-        <button className="w-14 h-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform">
+        <button
+          onClick={() => router.push("/dashboard/write")}
+          className="w-14 h-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform"
+        >
           <svg
             className="w-6 h-6"
             fill="none"
