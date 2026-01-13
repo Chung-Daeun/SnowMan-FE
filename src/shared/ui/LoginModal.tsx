@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -8,16 +9,22 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
+  const router = useRouter();
+
   const handleGoogleLogin = () => {
-    // TODO: 구글 로그인 구현
+    // TODO: 구글 OAuth 로그인 구현
+    // 백엔드 구글 로그인 API 연동 필요
+    // window.location.href = "/api/auth/google";
+    // 또는 구글 OAuth 라이브러리 사용
     console.log("구글 로그인");
   };
 
   const handleTestLogin = () => {
     // TODO: 테스트 계정으로 로그인 처리
+    // 백엔드에서 테스트 계정 정보 받으면 수정 가능
     // 테스트 계정 정보를 세션/쿠키에 저장
-    console.log("테스트 계정 로그인");
-    // 로그인 후 모달 닫기
+    
+    router.push("/dashboard");
     onClose();
   };
 
