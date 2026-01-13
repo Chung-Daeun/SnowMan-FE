@@ -1,38 +1,17 @@
 "use client";
 
-// Mock 데이터: 오늘의 일기들
-const todayDiaries = [
-  {
-    id: 1,
-    time: "09:30",
-    content:
-      "오늘 아침 일어나니 날씨가 너무 좋아서 기분이 좋아졌어요. 하지만 회사에 가는 길이 너무 지루했어요.",
-    aiResponse:
-      "아침의 좋은 날씨가 당신의 기분을 좋게 만들었군요. 하지만 회사로 가는 길이 지루하다는 것은 일상의 반복에서 오는 피로감일 수 있어요. 작은 변화를 주는 것도 좋은 방법일 것 같아요.",
-  },
-  {
-    id: 2,
-    time: "14:20",
-    content:
-      "점심시간에 동료들과 이야기를 나누었는데, 생각보다 재미있었어요. 하지만 오후 업무가 너무 많아서 스트레스를 받았어요.",
-    aiResponse:
-      "동료들과의 대화가 즐거웠다는 것은 좋은 신호예요. 하지만 업무 스트레스는 누구나 겪는 일이에요. 자신을 너무 몰아세우지 말고, 작은 휴식도 괜찮아요.",
-  },
-  {
-    id: 3,
-    time: "19:45",
-    content:
-      "집에 와서 쉬고 있는데, 오늘 하루가 정말 길었어요. 내일도 비슷한 하루가 반복될 것 같아서 조금 걱정이에요.",
-    aiResponse:
-      "하루가 길게 느껴졌다는 것은 많은 일을 겪으셨다는 의미일 수 있어요. 내일에 대한 걱정은 자연스러운 감정이지만, 지금 이 순간의 휴식을 즐기는 것도 중요해요.",
-  },
-];
+import { useRouter } from "next/navigation";
+import { todayDiaries } from "@/shared/mock/diary";
 
 export default function TodayPage() {
+  const router = useRouter();
   const today = new Date();
   const month = today.getMonth() + 1;
   const date = today.getDate();
   const weekDay = ["일", "월", "화", "수", "목", "금", "토"][today.getDay()];
+  const dateStr = `${today.getFullYear()}-${String(month).padStart(2, "0")}-${String(
+    date
+  ).padStart(2, "0")}`;
 
   return (
     <div className="flex min-h-screen flex-col px-6 py-6">
@@ -48,9 +27,10 @@ export default function TodayPage() {
       {/* 일기 목록 */}
       <div className="space-y-4">
         {todayDiaries.map((diary) => (
-          <div
+          <button
             key={diary.id}
-            className="bg-white rounded-2xl p-5 shadow-sm space-y-4"
+            onClick={() => router.push(`/dashboard/diary/${dateStr}/${diary.id}`)}
+            className="w-full bg-white rounded-2xl p-5 shadow-sm space-y-4 text-left hover:shadow-md transition-shadow"
           >
             {/* 시간 */}
             <div className="flex items-center gap-2">
@@ -70,11 +50,11 @@ export default function TodayPage() {
                 <div className="w-2 h-2 rounded-full bg-primary"></div>
                 <span className="text-xs font-semibold text-primary">AI</span>
               </div>
-              <p className="text-sm text-foreground leading-relaxed">
+              <p className="text-sm text-foreground leading-relaxed line-clamp-2">
                 {diary.aiResponse}
               </p>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
