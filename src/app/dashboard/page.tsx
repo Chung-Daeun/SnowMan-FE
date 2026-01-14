@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { dateDiaries, getWrittenDatesByMonth } from "@/shared/mock/diary";
+import { DiaryCard } from "@/shared/ui/DiaryCard";
+import { DiaryEmptyState } from "@/shared/ui/DiaryEmptyState";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -222,56 +224,29 @@ export default function DashboardPage() {
           {selectedDiaries.length > 0 ? (
             <div className="space-y-4">
               {selectedDiaries.map((diary) => (
-                <button
+                <DiaryCard
                   key={diary.id}
+                  time={diary.time}
+                  content={diary.content}
+                  aiPreview={diary.aiResponse}
+                  contentLineClampClass="line-clamp-3"
+                  aiPreviewLineClampClass="line-clamp-2"
                   onClick={() => {
-                    const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(selectedDate).padStart(2, '0')}`;
+                    const dateStr = `${viewYear}-${String(
+                      viewMonth + 1
+                    ).padStart(2, "0")}-${String(selectedDate).padStart(
+                      2,
+                      "0"
+                    )}`;
                     router.push(`/dashboard/diary/${dateStr}/${diary.id}`);
                   }}
-                  className="w-full bg-white rounded-2xl p-5 shadow-sm text-left space-y-4 hover:shadow-md transition-shadow"
-                >
-                  {/* 시간 */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-light">{diary.time}</span>
-                  </div>
-
-                  {/* 일기 내용 */}
-                  <div className="space-y-2">
-                    <p className="text-foreground leading-relaxed line-clamp-3">
-                      {diary.content}
-                    </p>
-                  </div>
-
-                  {/* AI 답변 미리보기 */}
-                  <div className="bg-primary/5 rounded-xl p-4 border-l-4 border-primary">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-2 h-2 rounded-full bg-primary"></div>
-                      <span className="text-xs font-semibold text-primary">AI</span>
-                    </div>
-                    <p className="text-sm text-foreground leading-relaxed line-clamp-2">
-                      {diary.aiResponse}
-                    </p>
-                  </div>
-                </button>
+                />
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <div className="text-center space-y-4">
-                <p className="text-gray text-lg font-medium">
-                  이 날 작성한 일기가 없습니다
-                </p>
-                <p className="text-gray-light text-sm">
-                  일기를 작성해보세요
-                </p>
-                <button
-                  onClick={() => router.push("/dashboard/write")}
-                  className="mt-2 rounded-xl bg-primary text-white px-6 py-3 font-semibold text-sm hover:bg-[#7a9588] transition-colors"
-                >
-                  일기 작성하기
-                </button>
-              </div>
-            </div>
+            <DiaryEmptyState
+              onWriteClick={() => router.push("/dashboard/write")}
+            />
           )}
         </div>
       )}
