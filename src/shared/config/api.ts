@@ -10,3 +10,17 @@ export const getApiUrl = (path: string) => {
   return `${API_BASE_URL}${path}`;
 };
 
+// 세션 기반 인증을 위한 fetch 래퍼
+export async function apiFetch(
+  path: string,
+  init: RequestInit = {}
+): Promise<Response> {
+  return fetch(getApiUrl(path), {
+    ...init,
+    credentials: "include", // ⭐ 세션 쿠키(JSESSIONID) 포함
+    headers: {
+      "Content-Type": "application/json",
+      ...(init.headers ?? {}),
+    },
+  });
+}

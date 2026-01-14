@@ -12,18 +12,20 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const router = useRouter();
 
   const handleGoogleLogin = () => {
-    // TODO: 구글 OAuth 로그인 구현
-    // 백엔드 구글 로그인 API 연동 필요
-    // window.location.href = "/api/auth/google";
-    // 또는 구글 OAuth 라이브러리 사용
-    console.log("구글 로그인");
+    const backend =
+      process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+
+    // 지금 접속한 프론트 기준으로 redirect_uri 생성
+    const redirect = encodeURIComponent(`${window.location.origin}/dashboard`);
+
+    window.location.href = `${backend}/oauth2/authorization/google?redirect_uri=${redirect}`;
   };
 
   const handleTestLogin = () => {
     // TODO: 테스트 계정으로 로그인 처리
     // 백엔드에서 테스트 계정 정보 받으면 수정 가능
     // 테스트 계정 정보를 세션/쿠키에 저장
-    
+
     router.push("/dashboard");
     onClose();
   };
@@ -86,9 +88,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         {/* 헤더 */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-foreground mb-2">로그인</h2>
-          <p className="text-gray text-sm">
-            SnowMan과 함께 시작해보세요
-          </p>
+          <p className="text-gray text-sm">SnowMan과 함께 시작해보세요</p>
         </div>
 
         {/* 구글 로그인 버튼 */}
