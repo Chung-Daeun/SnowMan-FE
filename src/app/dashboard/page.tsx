@@ -102,6 +102,21 @@ export default function DashboardPage() {
     ? dateDiaries[selectedDateString] || []
     : [];
 
+  const todayDateOnly = new Date(currentYear, currentMonth, currentDate);
+  const selectedDateObj =
+    selectedDate !== null ? new Date(viewYear, viewMonth, selectedDate) : null;
+
+  const isSelectedToday =
+    selectedDateObj !== null && selectedDateObj.getTime() === todayDateOnly.getTime();
+
+  const isSelectedFuture =
+    selectedDateObj !== null && selectedDateObj.getTime() > todayDateOnly.getTime();
+
+  const isSelectedPast =
+    selectedDateObj !== null &&
+    !isSelectedToday &&
+    !isSelectedFuture;
+
   return (
     <div className="flex min-h-screen flex-col px-6 py-6">
       <div className="mb-6">
@@ -243,10 +258,35 @@ export default function DashboardPage() {
                 />
               ))}
             </div>
-          ) : (
+          ) : isSelectedToday ? (
             <DiaryEmptyState
+              title="오늘 작성한 일기가 없습니다"
+              description="오늘의 감정을 간단히 남겨볼까요?"
+              buttonLabel="오늘 일기 작성하기"
               onWriteClick={() => router.push("/dashboard/write")}
             />
+          ) : isSelectedFuture ? (
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <div className="text-center space-y-2">
+                <p className="text-gray text-lg font-medium">
+                  미래 일기는 아직 작성할 수 없어요
+                </p>
+                <p className="text-gray-light text-sm">
+                  오늘이 되었을 때 천천히 기록해볼까요?
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <div className="text-center space-y-2">
+                <p className="text-gray text-lg font-medium">
+                  이 날 작성한 일기가 없습니다
+                </p>
+                <p className="text-gray-light text-sm">
+                  앞으로는 이 날들을 더 자주 기록해봐요
+                </p>
+              </div>
+            </div>
           )}
         </div>
       )}

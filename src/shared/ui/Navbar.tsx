@@ -72,28 +72,24 @@ export function Navbar() {
   return (
     <>
       <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-gray-light/20 px-6 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-1 items-center justify-around pr-4">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-                    isActive
-                      ? "text-primary"
-                      : "text-gray hover:text-foreground"
-                  }`}
-                >
-                  {item.icon}
-                  <span className="text-xs font-medium">{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
+        <div className="flex items-center justify-around">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
+                  isActive ? "text-primary" : "text-gray hover:text-foreground"
+                }`}
+              >
+                {item.icon}
+                <span className="text-xs font-medium">{item.label}</span>
+              </Link>
+            );
+          })}
 
-          {/* 프로필 버튼 (오른쪽 끝) */}
+          {/* 프로필 버튼 (네 번째 아이템, 동일 간격) */}
           <button
             type="button"
             onClick={() => setIsProfileModalOpen(true)}
