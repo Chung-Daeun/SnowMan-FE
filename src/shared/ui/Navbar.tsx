@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { ProfileEditModal } from "@/shared/ui/ProfileEditModal";
 
 export function Navbar() {
   const pathname = usePathname();
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const navItems = [
     {
@@ -67,26 +70,67 @@ export function Navbar() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-gray-light/20 px-6 py-3">
-      <div className="flex items-center justify-around">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors ${
-                isActive
-                  ? "text-primary"
-                  : "text-gray hover:text-foreground"
-              }`}
+    <>
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-gray-light/20 px-6 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex flex-1 items-center justify-around pr-4">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
+                    isActive
+                      ? "text-primary"
+                      : "text-gray hover:text-foreground"
+                  }`}
+                >
+                  {item.icon}
+                  <span className="text-xs font-medium">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* 프로필 버튼 (오른쪽 끝) */}
+          <button
+            type="button"
+            onClick={() => setIsProfileModalOpen(true)}
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors text-gray hover:text-foreground"
+            aria-label="프로필 편집"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              {item.icon}
-              <span className="text-xs font-medium">{item.label}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
+            <span className="text-xs font-medium">프로필</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* 회원정보 수정 모달 */}
+      <ProfileEditModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        // TODO: 실제 사용자 정보로 초기값 연결
+        initialNickname=""
+        initialBirthdate=""
+        onSave={(data) => {
+          // TODO: 회원정보 수정 API 연동
+          console.log("프로필 저장:", data);
+        }}
+      />
+    </>
   );
 }
+
