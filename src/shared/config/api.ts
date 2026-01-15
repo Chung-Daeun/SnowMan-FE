@@ -15,7 +15,7 @@ export async function apiFetch(
   path: string,
   init: RequestInit = {}
 ): Promise<Response> {
-  return fetch(getApiUrl(path), {
+  const response = await fetch(getApiUrl(path), {
     ...init,
     credentials: "include", // ⭐ 세션 쿠키(JSESSIONID) 포함
     headers: {
@@ -23,4 +23,13 @@ export async function apiFetch(
       ...(init.headers ?? {}),
     },
   });
+
+  // 401 응답이면 홈으로 리다이렉트
+  if (response.status === 401) {
+    if (typeof window !== "undefined") {
+      window.location.href = "/";
+    }
+  }
+
+  return response;
 }
