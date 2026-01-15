@@ -1,18 +1,37 @@
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-
-export default function WriteDiaryPage() {
-  const router = useRouter();
-  const [content, setContent] = useState("");
-
-  const handleSubmit = () => {
-    // TODO: 일기 저장 API 호출
-    console.log("일기 저장:", content);
-    // 저장 후 대시보드로 이동
-    router.push("/dashboard");
-  };
+ "use client";
+ 
+ import { useState } from "react";
+ import { useRouter } from "next/navigation";
+ import { apiFetch } from "@/shared/config/api";
+ 
+ export default function WriteDiaryPage() {
+   const router = useRouter();
+   const [content, setContent] = useState("");
+   const [isSubmitting, setIsSubmitting] = useState(false);
+ 
+   const handleSubmit = async () => {
+     if (!content.trim() || isSubmitting) return;
+ 
+     try {
+       setIsSubmitting(true);
+       const response = await apiFetch("/api/diary/create", {
+         method: "POST",
+         body: JSON.stringify({ content }),
+       });
+ 
+       if (!response.ok) {
+         console.error("일기 저장 실패", await response.text());
+         return;
+       }
+ 
+       // 저장 후 대시보드로 이동
+       router.push("/dashboard");
+     } catch (error) {
+       console.error("일기 저장 중 오류 발생", error);
+     } finally {
+       setIsSubmitting(false);
+     }
+   };
 
   const handleCancel = () => {
     router.back();

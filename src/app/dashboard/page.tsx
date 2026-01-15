@@ -1,12 +1,19 @@
-"use client";
-
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-import { dateDiaries, getWrittenDatesByMonth } from "@/shared/mock/diary";
-import { DiaryCard } from "@/shared/ui/DiaryCard";
-import { DiaryEmptyState } from "@/shared/ui/DiaryEmptyState";
-
-export default function DashboardPage() {
+ "use client";
+ 
+ import { useRouter } from "next/navigation";
+ import { useEffect, useState } from "react";
+ import { apiFetch } from "@/shared/config/api";
+ import { DiaryCard } from "@/shared/ui/DiaryCard";
+ import { DiaryEmptyState } from "@/shared/ui/DiaryEmptyState";
+ 
+type DiaryItem = {
+  id: number;
+  time: string;
+  content: string;
+  aiResponse: string | null;
+};
+ 
+ export default function DashboardPage() {
   const router = useRouter();
   const today = new Date();
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -16,6 +23,8 @@ export default function DashboardPage() {
   const currentYear = today.getFullYear();
 
   const [selectedDate, setSelectedDate] = useState<number | null>(currentDate);
+  const [writtenDates, setWrittenDates] = useState<Set<number>>(new Set());
+  const [selectedDiaries, setSelectedDiaries] = useState<DiaryItem[]>([]);
 
   // 현재 보고 있는 달의 첫 번째 날과 마지막 날
   const firstDay = new Date(viewYear, viewMonth, 1);
@@ -82,25 +91,99 @@ export default function DashboardPage() {
   ];
 
   const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
+ 
+  // 현재 보고 있는 달의 작성된 날짜 목록을 서버에서 가져오기
+  useEffect(() => {
+    const fetchMonthDiaries = async () => {
+      const monthParam = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}`;
+      try {
+        const response = await apiFetch(`/api/diary/month?date=${monthParam}`, {
+          method: "GET",
+        });
+        if (!response.ok) {
+          console.error("월별 일기 조회 실패", await response.text());
+          setWrittenDates(new Set());
+          return;
+        }
+        const json = await response.json();
 
-  // 현재 보고 있는 달에서 작성된 날짜 목록
-  const writtenDates = useMemo(
-    () => getWrittenDatesByMonth(viewYear, viewMonth),
-    [viewMonth, viewYear]
-  );
+        // 기대 형식: { data: [{ createdAt: "2026-01-14T21:30:25.324772", ... }], success: true }
+        const items: any[] = Array.isArray(json?.data) ? json.data : [];
 
-  // 선택된 날짜의 일기 가져오기
-  const getSelectedDateString = () => {
-    if (selectedDate === null) return null;
-    return `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(
-      selectedDate
-    ).padStart(2, "0")}`;
-  };
+        const days = items
+          .map((item) => {
+            const createdAt: unknown = item?.createdAt;
+            if (typeof createdAt !== "string") return null;
+            // "YYYY-MM-DD..." 에서 일(day)만 추출
+            const dayStr = createdAt.slice(8, 10);
+            const dayNum = Number(dayStr);
+            return Number.isNaN(dayNum) ? null : dayNum;
+          })
+          .filter((day): day is number => day !== null);
 
-  const selectedDateString = getSelectedDateString();
-  const selectedDiaries = selectedDateString
-    ? dateDiaries[selectedDateString] || []
-    : [];
+        setWrittenDates(new Set(days));
+      } catch (error) {
+        console.error("월별 일기 조회 중 오류 발생", error);
+        setWrittenDates(new Set());
+      }
+    };
+
+    fetchMonthDiaries();
+  }, [viewYear, viewMonth]);
+ 
+  // 선택된 날짜의 일기 목록을 서버에서 가져오기
+  useEffect(() => {
+    if (selectedDate === null) {
+      setSelectedDiaries([]);
+      return;
+    }
+
+    const fetchDateDiaries = async () => {
+      const dateParam = `${viewYear}-${String(viewMonth + 1).padStart(
+        2,
+        "0"
+      )}-${String(selectedDate).padStart(2, "0")}`;
+
+      try {
+        const response = await apiFetch(`/api/diary/day?date=${dateParam}`, {
+          method: "GET",
+          credentials: "include", // 세션 쿠키 포함
+        });
+        if (!response.ok) {
+          console.error("일자별 일기 조회 실패", await response.text());
+          setSelectedDiaries([]);
+          return;
+        }
+
+        const json = await response.json();
+
+        const rawList: any[] = Array.isArray(json?.data) ? json.data : [];
+
+        const diaries: DiaryItem[] = rawList.map((item) => {
+          const createdAt: unknown = item?.createdAt;
+          const time =
+            typeof createdAt === "string" ? createdAt.slice(11, 16) : "";
+
+          const aiReplyContent: unknown = item?.aiReply?.replyContent;
+
+          return {
+            id: item?.diaryId ?? 0,
+            time,
+            content: String(item?.content ?? ""),
+            aiResponse:
+              typeof aiReplyContent === "string" ? aiReplyContent : null,
+          };
+        });
+
+        setSelectedDiaries(diaries);
+      } catch (error) {
+        console.error("일자별 일기 조회 중 오류 발생", error);
+        setSelectedDiaries([]);
+      }
+    };
+
+    fetchDateDiaries();
+  }, [selectedDate, viewMonth, viewYear]);
 
   const todayDateOnly = new Date(currentYear, currentMonth, currentDate);
   const selectedDateObj =
@@ -158,6 +241,9 @@ export default function DashboardPage() {
               />
             </svg>
           </button>
+          <span className="text-base font-semibold text-foreground">
+            {monthNames[viewMonth]}
+          </span>
           <button
             onClick={goToNextMonth}
             className="p-2 hover:bg-gray-light/10 rounded-lg transition-colors"
@@ -198,8 +284,7 @@ export default function DashboardPage() {
             }
 
             // 현재 보고 있는 달의 날짜에 일기가 있는지 확인
-            const dateString = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const isWritten = dateDiaries[dateString] && dateDiaries[dateString].length > 0;
+            const isWritten = writtenDates.has(day);
             const isToday = isCurrentMonth && day === currentDate;
             const isSelected = day === selectedDate;
 

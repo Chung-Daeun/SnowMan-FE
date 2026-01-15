@@ -1,7 +1,7 @@
 interface DiaryCardProps {
   time: string;
   content: string;
-  aiPreview: string;
+  aiPreview: string | null;
   onClick: () => void;
   contentLineClampClass?: string;
   aiPreviewLineClampClass?: string;
@@ -48,7 +48,8 @@ export function DiaryCard({
             aiPreviewLineClampClass ?? ""
           }`}
         >
-          {aiPreview}
+          {aiPreview ??
+            "아직 ai 답변이 달리지 않았어요. 잠시만 기다려주세요."}
         </p>
       </div>
     </button>
