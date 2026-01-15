@@ -15,12 +15,16 @@ export function Header({ title = "SnowMan" }: HeaderProps) {
         credentials: "include", // 세션 쿠키 포함
       });
 
-      // 메인 페이지로 리디렉션
-      window.location.href = "/";
+      // 로그아웃 플래그 저장
+      localStorage.setItem("isLoggedOut", "true");
+
+      // 메인 페이지로 리디렉션 (히스토리 교체)
+      window.location.replace("/");
     } catch (error) {
       console.error("로그아웃 실패:", error);
-      // 실패해도 메인 페이지로 이동
-      window.location.href = "/";
+      // 실패해도 플래그 저장하고 메인 페이지로 이동
+      localStorage.setItem("isLoggedOut", "true");
+      window.location.replace("/");
     }
   };
 

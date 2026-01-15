@@ -12,6 +12,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const router = useRouter();
 
   const handleGoogleLogin = () => {
+    // 로그인 시작 시 로그아웃 플래그 제거
+    localStorage.removeItem("isLoggedOut");
+
     const backend =
       process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
@@ -22,6 +25,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   };
 
   const handleTestLogin = () => {
+    // 테스트 로그인 시 로그아웃 플래그 제거
+    localStorage.removeItem("isLoggedOut");
+
     // TODO: 테스트 계정으로 로그인 처리
     // 백엔드에서 테스트 계정 정보 받으면 수정 가능
     // 테스트 계정 정보를 세션/쿠키에 저장
