@@ -1,7 +1,7 @@
 interface DiaryCardProps {
   time: string;
   content: string;
-  aiPreview: string;
+  aiPreview: string | null;
   onClick: () => void;
   contentLineClampClass?: string;
   aiPreviewLineClampClass?: string;
