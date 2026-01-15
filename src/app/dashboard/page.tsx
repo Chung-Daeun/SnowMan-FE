@@ -70,7 +70,7 @@ export default function DashboardPage() {
   const isCurrentMonth = viewMonth === currentMonth && viewYear === currentYear;
 
   // 달력 그리드 생성
-  const calendarDays = [];
+  const calendarDays: (number | null)[] = [];
   
   // 첫 주의 빈 칸
   for (let i = 0; i < startingDayOfWeek; i++) {
@@ -98,21 +98,6 @@ export default function DashboardPage() {
   ];
 
   const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
- 
-  // 현재 보고 있는 달의 작성된 날짜 목록을 서버에서 가져오기
-  useEffect(() => {
-    const fetchMonthDiaries = async () => {
-      const monthParam = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}`;
-      try {
-        const response = await apiFetch(`/api/diary/month?date=${monthParam}`, {
-          method: "GET",
-        });
-        if (!response.ok) {
-          console.error("월별 일기 조회 실패", await response.text());
-          setWrittenDates(new Set());
-          return;
-        }
-        const json = await response.json();
 
   // 현재 보고 있는 달의 일기 목록 가져오기
   useEffect(() => {
