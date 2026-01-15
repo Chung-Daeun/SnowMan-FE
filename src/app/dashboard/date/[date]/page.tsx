@@ -1,16 +1,53 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { dateDiaries } from "@/shared/mock/diary";
+import { useEffect, useState } from "react";
+import { apiFetch } from "@/shared/config/api";
 import { DiaryCard } from "@/shared/ui/DiaryCard";
 import { DiaryEmptyState } from "@/shared/ui/DiaryEmptyState";
+
+interface DiaryData {
+  diaryId: number;
+  userId: number;
+  content: string;
+  aiReply: {
+    aiReplyId: number;
+    replyContent: string;
+    createdAt: string;
+  } | null;
+  createdAt: string;
+}
 
 export default function DateDiaryPage() {
   const params = useParams();
   const router = useRouter();
   const date = (params?.date as string) || "";
 
-  const diaries = dateDiaries[date] || [];
+  const [diaries, setDiaries] = useState<DiaryData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDateDiaries = async () => {
+      if (!date) return;
+
+      setIsLoading(true);
+      try {
+        const response = await apiFetch(`/api/diary/day?date=${date}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setDiaries(data.data || []);
+        }
+      } catch (error) {
+        console.error("날짜별 일기 로드 실패:", error);
+        setDiaries([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDateDiaries();
+  }, [date]);
 
   // 날짜 포맷팅
   const dateObj = new Date(date);
@@ -49,21 +86,32 @@ export default function DateDiaryPage() {
       </div>
 
       {/* 일기 목록 */}
-      {diaries.length > 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : diaries.length > 0 ? (
         <div className="space-y-4">
-          {diaries.map((diary) => (
-            <DiaryCard
-              key={diary.id}
-              time={diary.time}
-              content={diary.content}
-              aiPreview={diary.aiResponse}
-              contentLineClampClass="line-clamp-3"
-              aiPreviewLineClampClass="line-clamp-2"
-              onClick={() =>
-                router.push(`/dashboard/diary/${date}/${diary.id}`)
-              }
-            />
-          ))}
+          {diaries.map((diary) => {
+            const diaryDate = new Date(diary.createdAt);
+            const timeStr = `${String(diaryDate.getHours()).padStart(2, "0")}:${String(
+              diaryDate.getMinutes()
+            ).padStart(2, "0")}`;
+
+            return (
+              <DiaryCard
+                key={diary.diaryId}
+                time={timeStr}
+                content={diary.content}
+                aiPreview={diary.aiReply?.replyContent || ""}
+                contentLineClampClass="line-clamp-3"
+                aiPreviewLineClampClass="line-clamp-2"
+                onClick={() =>
+                  router.push(`/dashboard/diary/${date}/${diary.diaryId}`)
+                }
+              />
+            );
+          })}
         </div>
       ) : isToday ? (
         <DiaryEmptyState

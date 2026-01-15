@@ -19,12 +19,14 @@ export function ProfileEditModal({
 }: ProfileEditModalProps) {
   const [nickname, setNickname] = useState(initialNickname);
   const [birthdate, setBirthdate] = useState(initialBirthdate);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // 모달이 열릴 때마다 초기값으로 리셋
   useEffect(() => {
     if (isOpen) {
       setNickname(initialNickname);
       setBirthdate(initialBirthdate);
+      setIsEditMode(false);
     }
   }, [isOpen, initialNickname, initialBirthdate]);
 
@@ -33,16 +35,33 @@ export function ProfileEditModal({
       nickname: nickname.trim(),
       birthdate: birthdate || null,
     });
+    setIsEditMode(false);
     onClose();
   };
 
+  const handleCancel = () => {
+    setNickname(initialNickname);
+    setBirthdate(initialBirthdate);
+    setIsEditMode(false);
+  };
+
+  const handleResetNickname = () => {
+    setNickname("");
+  };
+
+  const handleResetBirthdate = () => {
+    setBirthdate("");
+  };
+
   const handleOverlayClick = () => {
-    onClose();
+    if (!isEditMode) {
+      onClose();
+    }
   };
 
   if (!isOpen) return null;
 
-  const isSaveDisabled = nickname.trim().length === 0;
+  const hasChanges = nickname !== initialNickname || birthdate !== initialBirthdate;
 
   return (
     <div
@@ -91,52 +110,109 @@ export function ProfileEditModal({
         {/* 폼 */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-foreground">
-              닉네임
-            </label>
-            <input
-              type="text"
-              value={nickname}
-              maxLength={20}
-              onChange={(e) => setNickname(e.target.value)}
-              className="w-full rounded-xl border border-gray-light/40 px-3 py-2 text-sm text-foreground placeholder-gray-light focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="표시할 닉네임을 입력하세요"
-            />
-            <p className="text-[11px] text-gray-light">
-              최대 20자까지 입력할 수 있어요
-            </p>
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-medium text-foreground">
+                닉네임
+              </label>
+              {isEditMode && (
+                <button
+                  type="button"
+                  onClick={handleResetNickname}
+                  className="text-xs text-gray hover:text-foreground transition-colors"
+                >
+                  초기화
+                </button>
+              )}
+            </div>
+            {isEditMode ? (
+              <>
+                <input
+                  type="text"
+                  value={nickname}
+                  maxLength={20}
+                  onChange={(e) => setNickname(e.target.value)}
+                  className="w-full rounded-xl border border-gray-light/40 px-3 py-2 text-sm text-foreground placeholder-gray-light focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="표시할 닉네임을 입력하세요"
+                />
+                <p className="text-[11px] text-gray-light">
+                  최대 20자까지 입력할 수 있어요
+                </p>
+              </>
+            ) : (
+              <div className="w-full rounded-xl border border-gray-light/40 px-3 py-2 text-sm text-foreground bg-gray-light/5">
+                {nickname || <span className="text-gray-light">설정되지 않음</span>}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-foreground">
-              생년월일
-            </label>
-            <input
-              type="date"
-              value={birthdate}
-              onChange={(e) => setBirthdate(e.target.value)}
-              className="w-full rounded-xl border border-gray-light/40 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-medium text-foreground">
+                생년월일
+              </label>
+              {isEditMode && (
+                <button
+                  type="button"
+                  onClick={handleResetBirthdate}
+                  className="text-xs text-gray hover:text-foreground transition-colors"
+                >
+                  초기화
+                </button>
+              )}
+            </div>
+            {isEditMode ? (
+              <input
+                type="date"
+                value={birthdate}
+                onChange={(e) => setBirthdate(e.target.value)}
+                className="w-full rounded-xl border border-gray-light/40 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            ) : (
+              <div className="w-full rounded-xl border border-gray-light/40 px-3 py-2 text-sm text-foreground bg-gray-light/5">
+                {birthdate || <span className="text-gray-light">설정되지 않음</span>}
+              </div>
+            )}
           </div>
         </div>
 
         {/* 버튼 영역 */}
         <div className="mt-6 flex gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 py-3 rounded-2xl border border-gray-light/30 text-gray text-sm font-semibold hover:bg-gray-light/10 transition-colors"
-          >
-            취소
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaveDisabled}
-            className="flex-1 py-3 rounded-2xl bg-primary text-white text-sm font-semibold hover:bg-[#7a9588] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            저장
-          </button>
+          {isEditMode ? (
+            <>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="flex-1 py-3 rounded-2xl border border-gray-light/30 text-gray text-sm font-semibold hover:bg-gray-light/10 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={!hasChanges}
+                className="flex-1 py-3 rounded-2xl bg-primary text-white text-sm font-semibold hover:bg-[#7a9588] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                저장
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 py-3 rounded-2xl border border-gray-light/30 text-gray text-sm font-semibold hover:bg-gray-light/10 transition-colors"
+              >
+                닫기
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsEditMode(true)}
+                className="flex-1 py-3 rounded-2xl bg-primary text-white text-sm font-semibold hover:bg-[#7a9588] transition-colors"
+              >
+                수정
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

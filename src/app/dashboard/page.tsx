@@ -1,10 +1,22 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-import { dateDiaries, getWrittenDatesByMonth } from "@/shared/mock/diary";
+import { useEffect, useMemo, useState } from "react";
+import { apiFetch } from "@/shared/config/api";
 import { DiaryCard } from "@/shared/ui/DiaryCard";
 import { DiaryEmptyState } from "@/shared/ui/DiaryEmptyState";
+
+interface DiaryData {
+  diaryId: number;
+  userId: number;
+  content: string;
+  aiReply: {
+    aiReplyId: number;
+    replyContent: string;
+    createdAt: string;
+  } | null;
+  createdAt: string;
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -16,6 +28,10 @@ export default function DashboardPage() {
   const currentYear = today.getFullYear();
 
   const [selectedDate, setSelectedDate] = useState<number | null>(currentDate);
+  const [monthDiaries, setMonthDiaries] = useState<DiaryData[]>([]);
+  const [selectedDiaries, setSelectedDiaries] = useState<DiaryData[]>([]);
+  const [isLoadingMonth, setIsLoadingMonth] = useState(false);
+  const [isLoadingSelected, setIsLoadingSelected] = useState(false);
 
   // 현재 보고 있는 달의 첫 번째 날과 마지막 날
   const firstDay = new Date(viewYear, viewMonth, 1);
@@ -83,24 +99,73 @@ export default function DashboardPage() {
 
   const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
 
-  // 현재 보고 있는 달에서 작성된 날짜 목록
-  const writtenDates = useMemo(
-    () => getWrittenDatesByMonth(viewYear, viewMonth),
-    [viewMonth, viewYear]
-  );
+  // 현재 보고 있는 달의 일기 목록 가져오기
+  useEffect(() => {
+    const fetchMonthDiaries = async () => {
+      setIsLoadingMonth(true);
+      try {
+        const yearMonth = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}`;
+        const response = await apiFetch(`/api/diary/month?date=${yearMonth}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setMonthDiaries(data.data || []);
+        }
+      } catch (error) {
+        console.error("월별 일기 로드 실패:", error);
+        setMonthDiaries([]);
+      } finally {
+        setIsLoadingMonth(false);
+      }
+    };
+
+    fetchMonthDiaries();
+  }, [viewMonth, viewYear]);
 
   // 선택된 날짜의 일기 가져오기
-  const getSelectedDateString = () => {
-    if (selectedDate === null) return null;
-    return `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(
-      selectedDate
-    ).padStart(2, "0")}`;
-  };
+  useEffect(() => {
+    const fetchSelectedDateDiaries = async () => {
+      if (selectedDate === null) {
+        setSelectedDiaries([]);
+        return;
+      }
 
-  const selectedDateString = getSelectedDateString();
-  const selectedDiaries = selectedDateString
-    ? dateDiaries[selectedDateString] || []
-    : [];
+      setIsLoadingSelected(true);
+      try {
+        const dateString = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(
+          selectedDate
+        ).padStart(2, "0")}`;
+        const response = await apiFetch(`/api/diary/day?date=${dateString}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setSelectedDiaries(data.data || []);
+        }
+      } catch (error) {
+        console.error("날짜별 일기 로드 실패:", error);
+        setSelectedDiaries([]);
+      } finally {
+        setIsLoadingSelected(false);
+      }
+    };
+
+    fetchSelectedDateDiaries();
+  }, [selectedDate, viewMonth, viewYear]);
+
+  // 현재 보고 있는 달에서 작성된 날짜 목록
+  const writtenDates = useMemo(() => {
+    const dates = new Set<number>();
+    monthDiaries.forEach((diary) => {
+      const diaryDate = new Date(diary.createdAt);
+      if (
+        diaryDate.getFullYear() === viewYear &&
+        diaryDate.getMonth() === viewMonth
+      ) {
+        dates.add(diaryDate.getDate());
+      }
+    });
+    return Array.from(dates);
+  }, [monthDiaries, viewYear, viewMonth]);
 
   const todayDateOnly = new Date(currentYear, currentMonth, currentDate);
   const selectedDateObj =
@@ -198,8 +263,7 @@ export default function DashboardPage() {
             }
 
             // 현재 보고 있는 달의 날짜에 일기가 있는지 확인
-            const dateString = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const isWritten = dateDiaries[dateString] && dateDiaries[dateString].length > 0;
+            const isWritten = writtenDates.includes(day);
             const isToday = isCurrentMonth && day === currentDate;
             const isSelected = day === selectedDate;
 
@@ -208,13 +272,15 @@ export default function DashboardPage() {
                 key={`day-${viewYear}-${viewMonth}-${day}`}
                 onClick={() => setSelectedDate(day)}
                 className={`aspect-square rounded-lg flex items-center justify-center text-sm font-medium transition-colors ${
-                  isSelected
-                    ? "bg-primary text-white ring-2 ring-primary ring-offset-2"
-                    : isToday
-                    ? "bg-primary/30 text-primary"
+                  isToday
+                    ? "bg-primary text-white font-semibold shadow-md"
                     : isWritten
                     ? "bg-primary/20 text-primary hover:bg-primary/30 cursor-pointer"
                     : "bg-gray-light/10 text-gray hover:bg-gray-light/20 cursor-pointer"
+                } ${
+                  isSelected
+                    ? "ring-2 ring-primary ring-offset-2"
+                    : ""
                 }`}
               >
                 {day}
@@ -236,27 +302,35 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {selectedDiaries.length > 0 ? (
+          {isLoadingSelected ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : selectedDiaries.length > 0 ? (
             <div className="space-y-4">
-              {selectedDiaries.map((diary) => (
-                <DiaryCard
-                  key={diary.id}
-                  time={diary.time}
-                  content={diary.content}
-                  aiPreview={diary.aiResponse}
-                  contentLineClampClass="line-clamp-3"
-                  aiPreviewLineClampClass="line-clamp-2"
-                  onClick={() => {
-                    const dateStr = `${viewYear}-${String(
-                      viewMonth + 1
-                    ).padStart(2, "0")}-${String(selectedDate).padStart(
-                      2,
-                      "0"
-                    )}`;
-                    router.push(`/dashboard/diary/${dateStr}/${diary.id}`);
-                  }}
-                />
-              ))}
+              {selectedDiaries.map((diary) => {
+                const diaryDate = new Date(diary.createdAt);
+                const dateStr = `${diaryDate.getFullYear()}-${String(
+                  diaryDate.getMonth() + 1
+                ).padStart(2, "0")}-${String(diaryDate.getDate()).padStart(2, "0")}`;
+                const timeStr = `${String(diaryDate.getHours()).padStart(2, "0")}:${String(
+                  diaryDate.getMinutes()
+                ).padStart(2, "0")}`;
+
+                return (
+                  <DiaryCard
+                    key={diary.diaryId}
+                    time={timeStr}
+                    content={diary.content}
+                    aiPreview={diary.aiReply?.replyContent || ""}
+                    contentLineClampClass="line-clamp-3"
+                    aiPreviewLineClampClass="line-clamp-2"
+                    onClick={() => {
+                      router.push(`/dashboard/diary/${dateStr}/${diary.diaryId}`);
+                    }}
+                  />
+                );
+              })}
             </div>
           ) : isSelectedToday ? (
             <DiaryEmptyState

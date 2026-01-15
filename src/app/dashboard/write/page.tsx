@@ -2,16 +2,39 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/shared/config/api";
 
 export default function WriteDiaryPage() {
   const router = useRouter();
   const [content, setContent] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = () => {
-    // TODO: 일기 저장 API 호출
-    console.log("일기 저장:", content);
-    // 저장 후 대시보드로 이동
-    router.push("/dashboard");
+  const handleSubmit = async () => {
+    if (!content.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await apiFetch("/api/diary/create", {
+        method: "POST",
+        body: JSON.stringify({ content: content.trim() }),
+      });
+
+      if (!response.ok) {
+        throw new Error("일기 저장에 실패했습니다");
+      }
+
+      const data = await response.json();
+      const diaryId = data.data.diaryId;
+      
+      // 오늘 날짜로 상세 페이지 이동
+      const today = new Date();
+      const dateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+      router.push(`/dashboard/diary/${dateString}/${diaryId}`);
+    } catch (error) {
+      console.error("일기 저장 실패:", error);
+      alert("일기 저장에 실패했습니다. 다시 시도해주세요.");
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
@@ -51,10 +74,10 @@ export default function WriteDiaryPage() {
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!content.trim()}
+            disabled={!content.trim() || isSubmitting}
             className="flex-1 py-4 rounded-2xl bg-primary text-white font-semibold hover:bg-[#7a9588] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            저장하기
+            {isSubmitting ? "저장 중..." : "저장하기"}
           </button>
         </div>
       </div>

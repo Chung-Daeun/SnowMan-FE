@@ -1,8 +1,21 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { todayDiaries } from "@/shared/mock/diary";
+import { useEffect, useState } from "react";
+import { apiFetch } from "@/shared/config/api";
 import { DiaryCard } from "@/shared/ui/DiaryCard";
+
+interface DiaryData {
+  diaryId: number;
+  userId: number;
+  content: string;
+  aiReply: {
+    aiReplyId: number;
+    replyContent: string;
+    createdAt: string;
+  } | null;
+  createdAt: string;
+}
 
 export default function TodayPage() {
   const router = useRouter();
@@ -14,6 +27,30 @@ export default function TodayPage() {
     2,
     "0"
   )}-${String(date).padStart(2, "0")}`;
+
+  const [diaries, setDiaries] = useState<DiaryData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTodayDiaries = async () => {
+      setIsLoading(true);
+      try {
+        const response = await apiFetch(`/api/diary/day?date=${dateStr}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setDiaries(data.data || []);
+        }
+      } catch (error) {
+        console.error("오늘 일기 로드 실패:", error);
+        setDiaries([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTodayDiaries();
+  }, [dateStr]);
 
   return (
     <div className="flex min-h-screen flex-col px-6 py-6">
@@ -27,20 +64,44 @@ export default function TodayPage() {
       </div>
 
       {/* 일기 목록 */}
-      <div className="space-y-4">
-        {todayDiaries.map((diary) => (
-          <DiaryCard
-            key={diary.id}
-            time={diary.time}
-            content={diary.content}
-            aiPreview={diary.aiResponse}
-            aiPreviewLineClampClass="line-clamp-2"
-            onClick={() =>
-              router.push(`/dashboard/diary/${dateStr}/${diary.id}`)
-            }
-          />
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : diaries.length > 0 ? (
+        <div className="space-y-4">
+          {diaries.map((diary) => {
+            const diaryDate = new Date(diary.createdAt);
+            const timeStr = `${String(diaryDate.getHours()).padStart(2, "0")}:${String(
+              diaryDate.getMinutes()
+            ).padStart(2, "0")}`;
+
+            return (
+              <DiaryCard
+                key={diary.diaryId}
+                time={timeStr}
+                content={diary.content}
+                aiPreview={diary.aiReply?.replyContent || ""}
+                aiPreviewLineClampClass="line-clamp-2"
+                onClick={() =>
+                  router.push(`/dashboard/diary/${dateStr}/${diary.diaryId}`)
+                }
+              />
+            );
+          })}
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="text-center space-y-2">
+            <p className="text-gray text-lg font-medium">
+              오늘 작성한 일기가 없습니다
+            </p>
+            <p className="text-gray-light text-sm">
+              오늘의 감정을 간단히 남겨볼까요?
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* 일기 작성 버튼 (모바일 프레임 안쪽 하단 우측) */}
       <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-full max-w-[430px] px-6 flex justify-end">

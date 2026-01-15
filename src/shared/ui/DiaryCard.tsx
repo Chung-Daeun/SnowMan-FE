@@ -38,19 +38,21 @@ export function DiaryCard({
       </div>
 
       {/* AI 답변 미리보기 */}
-      <div className="bg-primary/5 rounded-xl p-4 border-l-4 border-primary">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-2 h-2 rounded-full bg-primary"></div>
-          <span className="text-xs font-semibold text-primary">AI</span>
+      {aiPreview ? (
+        <div className="bg-primary/5 rounded-xl p-4 border-l-4 border-primary">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-2 rounded-full bg-primary"></div>
+            <span className="text-xs font-semibold text-primary">AI</span>
+          </div>
+          <p
+            className={`text-sm text-foreground leading-relaxed ${
+              aiPreviewLineClampClass ?? ""
+            }`}
+          >
+            {aiPreview}
+          </p>
         </div>
-        <p
-          className={`text-sm text-foreground leading-relaxed ${
-            aiPreviewLineClampClass ?? ""
-          }`}
-        >
-          {aiPreview}
-        </p>
-      </div>
+      ) : null}
     </button>
   );
 }

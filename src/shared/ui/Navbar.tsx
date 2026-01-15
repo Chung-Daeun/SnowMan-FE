@@ -2,12 +2,62 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ProfileEditModal } from "@/shared/ui/ProfileEditModal";
+import { apiFetch } from "@/shared/config/api";
+
+interface UserInfo {
+  userId: number;
+  googleSub: string;
+  nickname: string | null;
+  birthdate: string | null;
+}
 
 export function Navbar() {
   const pathname = usePathname();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [isLoadingUserInfo, setIsLoadingUserInfo] = useState(true);
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const response = await apiFetch("/api/me");
+        if (response.ok) {
+          const data = await response.json();
+          setUserInfo(data.data);
+        }
+      } catch (error) {
+        console.error("사용자 정보 로드 실패:", error);
+      } finally {
+        setIsLoadingUserInfo(false);
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
+
+  const handleProfileSave = async (data: { nickname: string; birthdate: string | null }) => {
+    try {
+      const response = await apiFetch("/api/me", {
+        method: "PUT",
+        body: JSON.stringify({
+          nickname: data.nickname,
+          birthdate: data.birthdate,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setUserInfo(result.data);
+      } else {
+        throw new Error("프로필 저장에 실패했습니다");
+      }
+    } catch (error) {
+      console.error("프로필 저장 실패:", error);
+      alert("프로필 저장에 실패했습니다. 다시 시도해주세요.");
+    }
+  };
 
   const navItems = [
     {
@@ -118,13 +168,9 @@ export function Navbar() {
       <ProfileEditModal
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
-        // TODO: 실제 사용자 정보로 초기값 연결
-        initialNickname=""
-        initialBirthdate=""
-        onSave={(data) => {
-          // TODO: 회원정보 수정 API 연동
-          console.log("프로필 저장:", data);
-        }}
+        initialNickname={userInfo?.nickname || ""}
+        initialBirthdate={userInfo?.birthdate || ""}
+        onSave={handleProfileSave}
       />
     </>
   );
