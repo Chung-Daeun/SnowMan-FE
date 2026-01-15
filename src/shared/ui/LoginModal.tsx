@@ -18,10 +18,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     const backend =
       process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
-    // 지금 접속한 프론트 기준으로 redirect_uri 생성
-    const redirect = encodeURIComponent(`${window.location.origin}/dashboard`);
-
-    window.location.href = `${backend}/oauth2/authorization/google?redirect_uri=${redirect}`;
+    // redirect_uri 파라미터 제거 (Spring Security가 콜백을 자동으로 관리함)
+    window.location.href = `${backend}/oauth2/authorization/google`;
   };
 
   const handleTestLogin = () => {
