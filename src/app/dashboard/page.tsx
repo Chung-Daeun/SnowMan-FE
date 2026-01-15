@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/shared/config/api";
-import { DiaryCard } from "@/shared/ui/DiaryCard";
-import { DiaryEmptyState } from "@/shared/ui/DiaryEmptyState";
+import { DiaryCard, DiaryEmptyState } from "@/shared/ui";
+import { formatDateToString, formatTime } from "@/shared/lib/date";
 
 interface DiaryData {
   diaryId: number;
@@ -104,7 +104,7 @@ export default function DashboardPage() {
     const fetchMonthDiaries = async () => {
       setIsLoadingMonth(true);
       try {
-        const yearMonth = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}`;
+        const yearMonth = formatDateToString(new Date(viewYear, viewMonth, 1)).slice(0, 7);
         const response = await apiFetch(`/api/diary/month?date=${yearMonth}`);
         
         if (response.ok) {
@@ -132,9 +132,7 @@ export default function DashboardPage() {
 
       setIsLoadingSelected(true);
       try {
-        const dateString = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(
-          selectedDate
-        ).padStart(2, "0")}`;
+        const dateString = formatDateToString(new Date(viewYear, viewMonth, selectedDate));
         const response = await apiFetch(`/api/diary/day?date=${dateString}`);
         
         if (response.ok) {
@@ -310,12 +308,8 @@ export default function DashboardPage() {
             <div className="space-y-4">
               {selectedDiaries.map((diary) => {
                 const diaryDate = new Date(diary.createdAt);
-                const dateStr = `${diaryDate.getFullYear()}-${String(
-                  diaryDate.getMonth() + 1
-                ).padStart(2, "0")}-${String(diaryDate.getDate()).padStart(2, "0")}`;
-                const timeStr = `${String(diaryDate.getHours()).padStart(2, "0")}:${String(
-                  diaryDate.getMinutes()
-                ).padStart(2, "0")}`;
+                const dateStr = formatDateToString(diaryDate);
+                const timeStr = formatTime(diaryDate);
 
                 return (
                   <DiaryCard

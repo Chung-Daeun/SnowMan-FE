@@ -1,8 +1,11 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { apiFetch } from "@/shared/config/api";
+import { formatDateDisplay, formatTime } from "@/shared/lib/date";
+import { useWaitForAiReply } from "@/shared/lib/useWaitForAiReply";
+import { LoadingSpinner } from "@/shared/ui";
 
 interface DiaryData {
   diaryId: number;
@@ -24,49 +27,21 @@ export default function DiaryDetailPage() {
 
   const [diary, setDiary] = useState<DiaryData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAiLoading, setIsAiLoading] = useState(false);
   const [isCreatingAiReply, setIsCreatingAiReply] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isNewlyCreated, setIsNewlyCreated] = useState(false);
 
-  const pollForAiReply = (isNew: boolean) => {
-    // 비용 절감을 위해 폴링 간격을 늘리고 시도 횟수 줄임
-    // 작성 직후인 경우: 3초 간격으로 20번 시도 (약 60초)
-    // 수동 생성인 경우: 3초 간격으로 10번 시도 (약 30초)
-    const pollInterval = 3000; // 3초 간격
-    const maxAttempts = isNew ? 20 : 10;
-    let attempts = 0;
+  const waitForAiReplyRef = useRef<(() => void) | null>(null);
 
-    const poll = async () => {
-      try {
-        const response = await apiFetch(`/api/diary/${id}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.data.aiReply) {
-            setDiary(data.data);
-            setIsAiLoading(false);
-            setIsCreatingAiReply(false);
-            return;
-          }
-        }
+  const { isLoading: isAiLoading, waitForAiReply, setIsLoading: setIsAiLoading } = useWaitForAiReply({
+    diaryId: id,
+    onSuccess: (diaryData) => {
+      setDiary(diaryData);
+      setIsCreatingAiReply(false);
+    },
+  });
 
-        attempts++;
-        if (attempts < maxAttempts) {
-          setTimeout(poll, pollInterval); // 3초마다 재시도
-        } else {
-          // 최대 시도 횟수 도달 시 로딩 종료
-          setIsAiLoading(false);
-          setIsCreatingAiReply(false);
-        }
-      } catch (err) {
-        console.error("AI 답변 폴링 실패:", err);
-        setIsAiLoading(false);
-        setIsCreatingAiReply(false);
-      }
-    };
-
-    setTimeout(poll, pollInterval); // 첫 시도는 3초 후
-  };
+  waitForAiReplyRef.current = waitForAiReply;
 
   useEffect(() => {
     const fetchDiary = async () => {
@@ -87,10 +62,11 @@ export default function DiaryDetailPage() {
         const isNew = (now.getTime() - createdAt.getTime()) < 120000; // 2분
         setIsNewlyCreated(isNew);
 
-        // 작성 직후인 경우 무조건 폴링 시작 (AI 답변이 없으면)
+        // 작성 직후이고 AI 답변이 없으면 로딩 표시
         if (!data.data.aiReply && isNew) {
           setIsAiLoading(true);
-          pollForAiReply(true);
+          // 백엔드에서 AI 답변 생성이 완료될 때까지 기다림
+          waitForAiReplyRef.current?.();
         }
       } catch (err) {
         console.error("일기 로드 실패:", err);
@@ -111,15 +87,10 @@ export default function DiaryDetailPage() {
     if (id) {
       fetchDiary();
     }
-  }, [id]);
+  }, [id, setIsAiLoading]);
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center px-6">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <p className="text-gray mt-4">일기를 불러오는 중...</p>
-      </div>
-    );
+    return <LoadingSpinner text="일기를 불러오는 중..." className="min-h-screen" />;
   }
 
   if (error || !diary) {
@@ -136,20 +107,10 @@ export default function DiaryDetailPage() {
     );
   }
 
-  const dateObj = new Date(date);
-  const month = dateObj.getMonth() + 1;
-  const day = dateObj.getDate();
-  const weekDay = ["일", "월", "화", "수", "목", "금", "토"][dateObj.getDay()];
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
-  };
+  const { display } = formatDateDisplay(date);
 
   const handleCreateAiReply = async () => {
-    if (!diary || isCreatingAiReply) return;
+    if (!diary || isCreatingAiReply || isAiLoading) return;
 
     setIsCreatingAiReply(true);
     setIsAiLoading(true);
@@ -162,9 +123,8 @@ export default function DiaryDetailPage() {
         throw new Error("AI 답변 생성에 실패했습니다");
       }
 
-      // AI 답변 생성 시작했으므로 폴링 시작 (수동 생성이므로 false)
-      setIsNewlyCreated(false);
-      pollForAiReply(false);
+      // AI 답변 생성 시작했으므로 완료될 때까지 기다림
+      waitForAiReplyRef.current?.();
     } catch (error) {
       console.error("AI 답변 생성 실패:", error);
       alert("AI 답변 생성에 실패했습니다. 다시 시도해주세요.");
@@ -179,9 +139,7 @@ export default function DiaryDetailPage() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs text-gray-light mb-1">일기 상세</p>
-          <h2 className="text-2xl font-bold text-foreground">
-            {month}월 {day}일 ({weekDay})
-          </h2>
+          <h2 className="text-2xl font-bold text-foreground">{display}</h2>
           <span className="text-sm text-gray-light">{formatTime(diary.createdAt)}</span>
         </div>
         <button

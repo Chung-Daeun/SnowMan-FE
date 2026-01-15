@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/shared/config/api";
-import { DiaryCard } from "@/shared/ui/DiaryCard";
+import { DiaryCard, LoadingSpinner } from "@/shared/ui";
+import { getTodayDateString, formatDateDisplay, formatTime } from "@/shared/lib/date";
 
 interface DiaryData {
   diaryId: number;
@@ -20,13 +21,8 @@ interface DiaryData {
 export default function TodayPage() {
   const router = useRouter();
   const today = new Date();
-  const month = today.getMonth() + 1;
-  const date = today.getDate();
-  const weekDay = ["일", "월", "화", "수", "목", "금", "토"][today.getDay()];
-  const dateStr = `${today.getFullYear()}-${String(month).padStart(
-    2,
-    "0"
-  )}-${String(date).padStart(2, "0")}`;
+  const { month, day, weekDay, display } = formatDateDisplay(today);
+  const dateStr = getTodayDateString();
 
   const [diaries, setDiaries] = useState<DiaryData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,23 +54,16 @@ export default function TodayPage() {
         <h2 className="text-2xl font-bold text-foreground mb-2">
           오늘의 일기
         </h2>
-        <p className="text-gray text-sm">
-          {month}월 {date}일 ({weekDay})
-        </p>
+        <p className="text-gray text-sm">{display}</p>
       </div>
 
       {/* 일기 목록 */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
+        <LoadingSpinner className="py-8" />
       ) : diaries.length > 0 ? (
         <div className="space-y-4">
           {diaries.map((diary) => {
-            const diaryDate = new Date(diary.createdAt);
-            const timeStr = `${String(diaryDate.getHours()).padStart(2, "0")}:${String(
-              diaryDate.getMinutes()
-            ).padStart(2, "0")}`;
+            const timeStr = formatTime(diary.createdAt);
 
             return (
               <DiaryCard

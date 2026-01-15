@@ -3,8 +3,8 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/shared/config/api";
-import { DiaryCard } from "@/shared/ui/DiaryCard";
-import { DiaryEmptyState } from "@/shared/ui/DiaryEmptyState";
+import { DiaryCard, DiaryEmptyState, LoadingSpinner } from "@/shared/ui";
+import { formatDateDisplay, formatTime } from "@/shared/lib/date";
 
 interface DiaryData {
   diaryId: number;
@@ -51,9 +51,7 @@ export default function DateDiaryPage() {
 
   // 날짜 포맷팅
   const dateObj = new Date(date);
-  const month = dateObj.getMonth() + 1;
-  const day = dateObj.getDate();
-  const weekDay = ["일", "월", "화", "수", "목", "금", "토"][dateObj.getDay()];
+  const { month, day, weekDay, display } = formatDateDisplay(dateObj);
 
   const today = new Date();
   const todayDateOnly = new Date(
@@ -79,24 +77,17 @@ export default function DateDiaryPage() {
         >
           ← 뒤로가기
         </button>
-        <h2 className="text-2xl font-bold text-foreground mb-2">
-          {month}월 {day}일 ({weekDay})
-        </h2>
+        <h2 className="text-2xl font-bold text-foreground mb-2">{display}</h2>
         <p className="text-gray text-sm">이 날 작성한 일기</p>
       </div>
 
       {/* 일기 목록 */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
+        <LoadingSpinner className="py-8" />
       ) : diaries.length > 0 ? (
         <div className="space-y-4">
           {diaries.map((diary) => {
-            const diaryDate = new Date(diary.createdAt);
-            const timeStr = `${String(diaryDate.getHours()).padStart(2, "0")}:${String(
-              diaryDate.getMinutes()
-            ).padStart(2, "0")}`;
+            const timeStr = formatTime(diary.createdAt);
 
             return (
               <DiaryCard
