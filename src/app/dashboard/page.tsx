@@ -99,31 +99,19 @@ type DiaryItem = {
       try {
         const response = await apiFetch(`/api/diary/month?date=${monthParam}`, {
           method: "GET",
+          credentials: "include"
         });
         if (!response.ok) {
-          console.error("월별 일기 조회 실패", await response.text());
+          console.error("작성된 날짜 조회 실패", await response.text());
           setWrittenDates(new Set());
           return;
         }
         const json = await response.json();
-
-        // 기대 형식: { data: [{ createdAt: "2026-01-14T21:30:25.324772", ... }], success: true }
-        const items: any[] = Array.isArray(json?.data) ? json.data : [];
-
-        const days = items
-          .map((item) => {
-            const createdAt: unknown = item?.createdAt;
-            if (typeof createdAt !== "string") return null;
-            // "YYYY-MM-DD..." 에서 일(day)만 추출
-            const dayStr = createdAt.slice(8, 10);
-            const dayNum = Number(dayStr);
-            return Number.isNaN(dayNum) ? null : dayNum;
-          })
-          .filter((day): day is number => day !== null);
-
+        const days: number[] = Array.isArray(json?.data) ? json.data : [];
         setWrittenDates(new Set(days));
+
       } catch (error) {
-        console.error("월별 일기 조회 중 오류 발생", error);
+        console.error("작성된 날짜 조회 중 오류 발생", error);
         setWrittenDates(new Set());
       }
     };
@@ -139,16 +127,14 @@ type DiaryItem = {
     }
 
     const fetchDateDiaries = async () => {
-      const dateParam = `${viewYear}-${String(viewMonth + 1).padStart(
-        2,
-        "0"
-      )}-${String(selectedDate).padStart(2, "0")}`;
+      const dateParam = `${viewYear}-${String(viewMonth + 1).padStart(2,"0")}-${String(selectedDate).padStart(2, "0")}`;
 
       try {
         const response = await apiFetch(`/api/diary/day?date=${dateParam}`, {
           method: "GET",
           credentials: "include", // 세션 쿠키 포함
         });
+
         if (!response.ok) {
           console.error("일자별 일기 조회 실패", await response.text());
           setSelectedDiaries([]);
@@ -156,26 +142,9 @@ type DiaryItem = {
         }
 
         const json = await response.json();
-
-        const rawList: any[] = Array.isArray(json?.data) ? json.data : [];
-
-        const diaries: DiaryItem[] = rawList.map((item) => {
-          const createdAt: unknown = item?.createdAt;
-          const time =
-            typeof createdAt === "string" ? createdAt.slice(11, 16) : "";
-
-          const aiReplyContent: unknown = item?.aiReply?.replyContent;
-
-          return {
-            id: item?.diaryId ?? 0,
-            time,
-            content: String(item?.content ?? ""),
-            aiResponse:
-              typeof aiReplyContent === "string" ? aiReplyContent : null,
-          };
-        });
-
+        const diaries: DiaryItem[] = Array.isArray(json?.data) ? json.data : [];
         setSelectedDiaries(diaries);
+
       } catch (error) {
         console.error("일자별 일기 조회 중 오류 발생", error);
         setSelectedDiaries([]);
@@ -327,7 +296,7 @@ type DiaryItem = {
             <div className="space-y-4">
               {selectedDiaries.map((diary) => (
                 <DiaryCard
-                  key={diary.id}
+                  key={`${viewYear}-${viewMonth}-${selectedDate}-${diary.id}`}
                   time={diary.time}
                   content={diary.content}
                   aiPreview={diary.aiResponse}
