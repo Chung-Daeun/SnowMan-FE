@@ -293,14 +293,16 @@ type DiaryItem = {
                 key={`day-${viewYear}-${viewMonth}-${day}`}
                 onClick={() => setSelectedDate(day)}
                 className={`aspect-square rounded-lg flex items-center justify-center text-sm font-medium transition-colors ${
-                  isSelected
-                    ? "bg-primary text-white ring-2 ring-primary ring-offset-2"
-                    : isToday
-                    ? "bg-primary/30 text-primary"
+                  isToday
+                    ? "bg-primary text-white"
                     : isWritten
                     ? "bg-primary/20 text-primary hover:bg-primary/30 cursor-pointer"
                     : "bg-gray-light/10 text-gray hover:bg-gray-light/20 cursor-pointer"
-                }`}
+                } ${
+                  isSelected 
+                    ? "ring-2 ring-primary ring-offset-2" 
+                    : ""
+                  }`}
               >
                 {day}
               </button>
