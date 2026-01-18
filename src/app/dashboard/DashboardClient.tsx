@@ -150,36 +150,65 @@ export default function DashboardClient({
   // =========================
   useEffect(() => {
     if (!selectedDate) return;
-
+  
     let cancelled = false;
-
-    const run = async () => {
-        setIsDayLoading(true);
-        setDayLoadedOnce(true);
-
-      const dateParam = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(selectedDate).padStart(2, "0")}`;
-
+    let pollTimer: ReturnType<typeof setTimeout> | null = null;
+  
+    const dateParam = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(selectedDate).padStart(2, "0")}`;
+  
+    const fetchDay = async () => {
+      setIsDayLoading(true);
+      setDayLoadedOnce(true);
+  
       try {
         const res = await apiFetch(`/api/diary/day?date=${dateParam}`);
         const json = await res.json();
-
+  
         if (cancelled) return;
-        setSelectedDiaries(json.data ?? []);
-      } catch (error) {
+  
+        const diaries = json.data ?? [];
+        setSelectedDiaries(diaries);
+  
+        return diaries;
+      } catch {
         if (cancelled) return;
         setSelectedDiaries([]);
+        return [];
       } finally {
         if (cancelled) return;
         setIsDayLoading(false);
       }
     };
-
+  
+    const run = async () => {
+      const diaries = await fetchDay();
+  
+      // ✅ aiReply가 비어있는 일기가 있으면 짧게 폴링(최대 5번)
+      if (!diaries?.some((d: any) => d.aiReply == null)) return;
+  
+      let tries = 0;
+      const poll = async () => {
+        if (cancelled) return;
+        tries += 1;
+  
+        const next = await fetchDay();
+        const stillPending = next?.some((d: any) => d.aiReply == null);
+  
+        if (!stillPending || tries >= 5) return;
+        pollTimer = setTimeout(poll, 2000);
+      };
+  
+      pollTimer = setTimeout(poll, 2000);
+    };
+  
     run();
-
+  
     return () => {
-        cancelled = true;
-    }
+      cancelled = true;
+      if (pollTimer) clearTimeout(pollTimer);
+    };
   }, [selectedDate, viewYear, viewMonth]);
+  
 
   // =========================
   // 시간 표시용 (시:분)
