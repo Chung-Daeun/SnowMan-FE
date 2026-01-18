@@ -172,11 +172,6 @@ export default function DashboardClient({
         if (cancelled) return;
         setIsDayLoading(false);
       }
-
-      const res = await apiFetch(`/api/diary/day?date=${dateParam}`, {
-        method: "GET",
-        credentials: "include",
-      });
     };
 
     run();
