@@ -118,13 +118,6 @@ export function Navbar() {
       <ProfileEditModal
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
-        // TODO: 실제 사용자 정보로 초기값 연결
-        initialNickname=""
-        initialBirthdate=""
-        onSave={(data) => {
-          // TODO: 회원정보 수정 API 연동
-          console.log("프로필 저장:", data);
-        }}
       />
     </>
   );
