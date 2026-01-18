@@ -26,9 +26,10 @@ export async function apiFetch(
 
   // 401 응답이면 홈으로 리다이렉트
   if (response.status === 401) {
-    if (typeof window !== "undefined") {
-      window.location.href = "/";
-    }
+    console.error("인증 에러 발생 (401): ", path);
+    // if (typeof window !== "undefined") {
+    //   window.location.href = "/";
+    // }
   }
 
   return response;

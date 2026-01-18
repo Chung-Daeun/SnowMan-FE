@@ -38,7 +38,7 @@
   };
 
   return (
-    <div className="flex min-h-screen flex-col px-6 py-6">
+    <div className="flex h-[calc(100vh-140px)] flex-col px-6 py-6">
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-foreground">일기 작성</h2>
