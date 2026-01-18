@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "../config/api";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -22,16 +23,25 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     window.location.href = `${backend}/oauth2/authorization/google`;
   };
 
-  const handleTestLogin = () => {
-    // 테스트 로그인 시 로그아웃 플래그 제거
-    localStorage.removeItem("isLoggedOut");
+  const handleTestLogin = async () => {
+    try {
+      // 1. 백엔드 테스트 로그인 API 호출
+      const response = await apiFetch("/api/test-login", {
+        method: "POST"
+      });
 
-    // TODO: 테스트 계정으로 로그인 처리
-    // 백엔드에서 테스트 계정 정보 받으면 수정 가능
-    // 테스트 계정 정보를 세션/쿠키에 저장
-
-    router.push("/dashboard");
-    onClose();
+      if (response.ok) {
+        // 2. 로그인 성공 시 플래그 제거 및 이동
+        localStorage.removeItem("isLoggedOut");
+        router.push("/dashboard");
+        onClose(); 
+      } else {
+        alert("테스트 로그인에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("테스트 로그인 중 오류: ", error);
+    }
+    
   };
 
   // ESC 키로 모달 닫기
