@@ -45,6 +45,11 @@ const summaryKeyByEmotion = summaryOrder.reduce(
 type EmotionBreakdown = {
   emotion: EmotionType;
   percentage: number;
+  factors?: string[];
+  timePattern?: {
+    mostActive: string;
+    averageTime: string;
+  };
 };
 
 type AnalysisReport = {
