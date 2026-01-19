@@ -28,7 +28,6 @@ export type AiReportResponse = {
   reportContent: string;
   createdAt: string;
 };
-
 const REPORT_API_BASE_PATH =
   process.env.NEXT_PUBLIC_REPORT_API_BASE_PATH ?? "/api/ai/report";
 

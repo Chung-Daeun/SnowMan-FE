@@ -7,12 +7,7 @@ import {
   type AiReportResponse,
   type EmotionScores,
 } from "@/shared/lib/aiReports";
-import {
-  weeklyReports as weeklyReportsMock,
-  monthlyReports as monthlyReportsMock,
-  type EmotionData,
-  type EmotionType,
-} from "@/shared/mock/analysis";
+import type { EmotionType } from "@/shared/mock/analysis";
 
 const emotionColors: Record<EmotionType, string> = {
   기쁨: "bg-yellow-400",
@@ -50,8 +45,6 @@ const summaryKeyByEmotion = summaryOrder.reduce(
 type EmotionBreakdown = {
   emotion: EmotionType;
   percentage: number;
-  factors?: string[];
-  timePattern?: EmotionData["timePattern"];
 };
 
 type AnalysisReport = {
@@ -72,11 +65,6 @@ type AnalysisReport = {
   >;
   breakdowns: EmotionBreakdown[];
 };
-
-const reportDataSource = (
-  process.env.NEXT_PUBLIC_REPORT_DATA_SOURCE ?? "mock"
-).toLowerCase();
-const useMockData = reportDataSource !== "api";
 
 const formatDate = (value: string) => value.replaceAll("-", ".");
 const toMonthLabel = (value: string) => {
@@ -100,46 +88,6 @@ const toScorePercentages = (scores: EmotionScores): EmotionBreakdown[] => {
       percentage,
     };
   });
-};
-
-const normalizeMockReport = (
-  report: (typeof weeklyReportsMock)[number] | (typeof monthlyReportsMock)[number],
-  label: string
-): AnalysisReport => {
-  const scores = summaryOrder.reduce(
-    (acc, summary) => {
-      const match = report.emotions?.find((emotion) => emotion.emotion === summary.label);
-      acc[summary.scoreKey] = match?.percentage ?? 0;
-      return acc;
-    },
-    {
-      anxiety: 0,
-      calm: 0,
-      joy: 0,
-      sadness: 0,
-      anger: 0,
-    }
-  );
-
-  return {
-    id: label,
-    label,
-    periodStart: report.periodStart,
-    periodEnd: report.periodEnd,
-    totalDiaries: report.totalDiaries,
-    insights: report.insights,
-    reportContent: report.reportContent,
-    summaries: {
-      anxietySummary: report.anxietySummary,
-      calmSummary: report.calmSummary,
-      joySummary: report.joySummary,
-      sadnessSummary: report.sadnessSummary,
-      angerSummary: report.angerSummary,
-    },
-    breakdowns: report.emotions?.length
-      ? report.emotions
-      : toScorePercentages(scores),
-  };
 };
 
 const normalizeApiReport = (report: AiReportResponse): AnalysisReport => {
@@ -209,22 +157,6 @@ export default function AnalysisPage() {
       setIsLoading(true);
       setLoadError(null);
 
-      if (useMockData) {
-        const normalizedWeekly = weeklyReportsMock.map((report) =>
-          normalizeMockReport(report, report.week)
-        );
-        const normalizedMonthly = monthlyReportsMock.map((report) =>
-          normalizeMockReport(report, report.month)
-        );
-        if (isMounted) {
-          setWeeklyReports(normalizedWeekly);
-          setMonthlyReports(normalizedMonthly);
-          setCurrentMonthIndex(0);
-          setIsLoading(false);
-        }
-        return;
-      }
-
       try {
         const [weekly, monthly] = await Promise.all([
           fetchWeeklyReports(),
@@ -249,7 +181,7 @@ export default function AnalysisPage() {
     return () => {
       isMounted = false;
     };
-  }, [useMockData]);
+  }, []);
 
   const currentMonthlyReport = useMemo(
     () => monthlyReports[currentMonthIndex],
