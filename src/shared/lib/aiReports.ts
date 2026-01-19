@@ -28,12 +28,8 @@ export type AiReportResponse = {
   reportContent: string;
   createdAt: string;
 };
-
-const REPORT_API_BASE_PATH =
-  process.env.NEXT_PUBLIC_REPORT_API_BASE_PATH ?? "/api/ai/report";
-
 async function fetchReports(type: "weekly" | "monthly") {
-  const response = await apiFetch(`${REPORT_API_BASE_PATH}/${type}`);
+  const response = await apiFetch(`/api/ai/report/${type}`);
   if (!response.ok) {
     throw new Error(`Failed to fetch ${type} reports`);
   }
